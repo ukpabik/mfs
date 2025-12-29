@@ -9,37 +9,42 @@ import (
 type TCPTransportConfig struct {
 	Addr          string
 	handshakeFunc HandshakeFunc
-	// TODO: Add decoder here as well once implemented
+	Decoder       Decoder
 }
 
 type TCPTransport struct {
-	config  TCPTransportConfig
+	TCPTransportConfig
 	Network *net.TCPListener
 	users   map[string]*TCPPeer
 
-	mut sync.Mutex
+	mut        sync.Mutex
+	rpcChannel chan RPC
 }
 
 type TCPPeer struct {
 	conn net.Conn
 }
 
+const chanSize = 1024
+
 func NewTCPTransportConfig(addr string, handshakeFunc HandshakeFunc) TCPTransportConfig {
 	return TCPTransportConfig{
 		Addr:          addr,
 		handshakeFunc: handshakeFunc,
+		Decoder:       SimpleDecoder{},
 	}
 }
 
 func NewTCPTransport(config TCPTransportConfig) *TCPTransport {
 	return &TCPTransport{
-		users:  make(map[string]*TCPPeer),
-		config: config,
+		users:              make(map[string]*TCPPeer),
+		TCPTransportConfig: config,
+		rpcChannel:         make(chan RPC, chanSize),
 	}
 }
 
 func (tp *TCPTransport) ListenAndAccept() error {
-	server, err := net.Listen("tcp", tp.config.Addr)
+	server, err := net.Listen("tcp", tp.Addr)
 	if err != nil {
 		return err
 	}
@@ -56,8 +61,8 @@ func (tp *TCPTransport) ListenAndAccept() error {
 			conn: conn,
 		}
 
-		if tp.config.handshakeFunc != nil {
-			if tp.config.handshakeFunc(peer); err != nil {
+		if tp.handshakeFunc != nil {
+			if tp.handshakeFunc(peer); err != nil {
 				_ = peer.Close()
 				continue
 			}
@@ -67,7 +72,7 @@ func (tp *TCPTransport) ListenAndAccept() error {
 		tp.mut.Unlock()
 
 		go func() {
-			_ = handlePeerConnection(peer)
+			_ = tp.handleConnection(peer)
 
 			tp.mut.Lock()
 			delete(tp.users, peer.RemoteAddr().String())
@@ -76,37 +81,24 @@ func (tp *TCPTransport) ListenAndAccept() error {
 	}
 }
 
-func handlePeerConnection(peer Peer) error {
+func (tp *TCPTransport) handleConnection(peer *TCPPeer) error {
 	defer peer.Close()
 
-	dec := NewGOBDecoder()
-	enc := NewGOBEncoder()
-
 	for {
-		frame, err := readFrame(readerFromPeer{peer})
+		rpc := RPC{}
+
+		err := tp.Decoder.Decode(peer.conn, &rpc)
 		if err != nil {
 			return err
 		}
+		rpc.From = peer.RemoteAddr()
 
-		msg, err := dec.Decode(frame)
-		if err != nil {
-			return err
-		}
-
-		resp := Message{
-			From:    peer.RemoteAddr(),
-			Payload: append([]byte("ack: "), msg.Payload...),
-		}
-
-		out, err := enc.Encode(resp)
-		if err != nil {
-			return err
-		}
-
-		if err := writeFrame(writerToPeer{peer}, out); err != nil {
-			return err
-		}
+		tp.rpcChannel <- rpc
 	}
+}
+
+func (tp *TCPTransport) Consume() <-chan RPC {
+	return tp.rpcChannel
 }
 
 func (tp *TCPTransport) Close() error {
@@ -115,17 +107,4 @@ func (tp *TCPTransport) Close() error {
 	}
 
 	return tp.Network.Close()
-}
-
-type readerFromPeer struct{ p Peer }
-
-func (r readerFromPeer) Read(b []byte) (int, error) { return r.p.Read(b) }
-
-type writerToPeer struct{ p Peer }
-
-func (w writerToPeer) Write(b []byte) (int, error) {
-	if err := w.p.Send(b); err != nil {
-		return 0, err
-	}
-	return len(b), nil
 }

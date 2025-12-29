@@ -1,51 +1,37 @@
 package server
 
 import (
-	"bytes"
 	"encoding/gob"
+	"io"
 	"net"
 )
 
-type Encoder interface {
-	Encode(Message) ([]byte, error)
-}
+var maxBufferSize = 1028
 
 type Decoder interface {
-	Decode([]byte) error
+	Decode(io.Reader, *RPC) error
 }
 
-type Message struct {
+type RPC struct {
 	From    net.Addr
 	Payload []byte
 }
 
 type GOBDecoder struct{}
-type GOBEncoder struct{}
 
-func NewGOBDecoder() *GOBDecoder {
-	gob.Register(Message{})
-	return &GOBDecoder{}
+func (gb GOBDecoder) Decode(r io.Reader, msg *RPC) error {
+	return gob.NewDecoder(r).Decode(msg)
 }
 
-func NewGOBEncoder() *GOBEncoder {
-	gob.Register(Message{})
-	return &GOBEncoder{}
-}
+type SimpleDecoder struct{}
 
-func (gb *GOBDecoder) Decode(data []byte) (Message, error) {
-	var msg Message
-	dec := gob.NewDecoder(bytes.NewReader(data))
-	if err := dec.Decode(&msg); err != nil {
-		return Message{}, err
+func (def SimpleDecoder) Decode(r io.Reader, msg *RPC) error {
+	buf := make([]byte, maxBufferSize)
+	n, err := r.Read(buf)
+	if err != nil {
+		return err
 	}
-	return msg, nil
-}
 
-func (ge *GOBEncoder) Encode(msg Message) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(msg); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	msg.Payload = buf[:n]
+	return nil
 }
