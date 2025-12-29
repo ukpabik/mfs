@@ -20,5 +20,11 @@ Implemented by `internal/files.FileHandler`:
 - `Delete(key)` removes the file.
 - `Clear()` deletes the entire root directory.
 
-### Side note
-`FileHandler` uses an internal RW mutex to guard operations.
+### Networking (TCP transport)
+Implemented by `internal/server` (transport layer).
+
+- `TCPTransport` listens on a TCP address and accepts connections.
+- Each connection is wrapped as a `TCPPeer`.
+- Optional `HandshakeFunc` runs on connect.
+- Incoming messages are decoded into an `RPC{From, Payload}` and pushed into `TCPTransport.rpcChannel`.
+- Consumers read inbound RPCs via `Consume() <-chan RPC`.
