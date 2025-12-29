@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	tp := server.NewTCPTransport(":3000")
+	config := server.NewTCPTransportConfig(":3000", server.SimpleHandshake)
+	tp := server.NewTCPTransport(config)
 
 	if err := tp.ListenAndAccept(); err != nil {
 		log.Fatalf("server crashed")
