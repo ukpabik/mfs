@@ -13,6 +13,7 @@ type Decoder interface {
 
 type RPC struct {
 	From    net.Addr
+	Peer    Peer
 	Payload []byte
 }
 

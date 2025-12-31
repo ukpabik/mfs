@@ -3,3 +3,6 @@ test:
 
 run:
 	go run main.go
+
+client:
+	go run ./internal/client/main.go

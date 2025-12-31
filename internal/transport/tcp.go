@@ -93,6 +93,7 @@ func (tp *TCPTransport) handleConnection(peer *TCPPeer) error {
 			return err
 		}
 		rpc.From = peer.RemoteAddr()
+		rpc.Peer = peer
 
 		tp.rpcChannel <- rpc
 	}

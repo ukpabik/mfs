@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"log"
-	"sync"
 
 	"github.com/ukpabik/mfs/internal/files"
 	"github.com/ukpabik/mfs/internal/transport"
@@ -13,7 +12,6 @@ import (
 type FileServer struct {
 	FileServerConfig
 
-	fsMut  sync.Mutex
 	stopCh chan struct{}
 }
 
@@ -49,11 +47,36 @@ func (fs *FileServer) loop() {
 	for {
 		select {
 		case rpc := <-fs.Transport.Consume():
-			// TODO: Convert the RPC to a specific type of message and handle it
-			log.Printf("rpc from=%v payload=%s", rpc.From, string(rpc.Payload))
+			message, err := parseMessage(&rpc)
+			if err != nil {
+				log.Printf("error parsing message: %v", err)
+				continue
+			}
+			log.Printf("from: %v, action: %v, filePath: %v, data: %v, size: %v",
+				message.From, message.Action, message.FilePath, message.Data, message.Size)
+
+			err = fs.handleMessage(message)
+			if err != nil {
+				_ = rpc.Peer.Send([]byte("ERROR: " + err.Error()))
+				continue
+			}
+
+			_ = rpc.Peer.Send([]byte("OK"))
+
 		case <-fs.stopCh:
 			return
 		}
+	}
+}
+
+func (fs *FileServer) handleMessage(msg FileServerMessage) error {
+	switch msg.Action {
+	case Create:
+		return fs.FileHandler.Create(msg.FilePath)
+	case Delete:
+		return fs.FileHandler.Delete(msg.FilePath)
+	default:
+		return nil
 	}
 }
 
