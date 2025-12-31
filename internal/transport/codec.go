@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"encoding/gob"
 	"io"
 	"net"
 )
@@ -15,12 +14,6 @@ type Decoder interface {
 type RPC struct {
 	From    net.Addr
 	Payload []byte
-}
-
-type GOBDecoder struct{}
-
-func (gb GOBDecoder) Decode(r io.Reader, msg *RPC) error {
-	return gob.NewDecoder(r).Decode(msg)
 }
 
 type SimpleDecoder struct{}
