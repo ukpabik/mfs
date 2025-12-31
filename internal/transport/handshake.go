@@ -1,4 +1,4 @@
-package server
+package transport
 
 type HandshakeFunc func(Peer) error
 

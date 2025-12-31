@@ -1,4 +1,4 @@
-package server
+package transport
 
 import (
 	"fmt"
@@ -55,6 +55,7 @@ func (tp *TCPTransport) ListenAndAccept() error {
 		conn, err := tp.Network.Accept()
 		if err != nil {
 			fmt.Printf("peer connection error: %v", err)
+			continue
 		}
 
 		peer := &TCPPeer{
@@ -62,7 +63,7 @@ func (tp *TCPTransport) ListenAndAccept() error {
 		}
 
 		if tp.handshakeFunc != nil {
-			if tp.handshakeFunc(peer); err != nil {
+			if err := tp.handshakeFunc(peer); err != nil {
 				_ = peer.Close()
 				continue
 			}
@@ -102,9 +103,5 @@ func (tp *TCPTransport) Consume() <-chan RPC {
 }
 
 func (tp *TCPTransport) Close() error {
-	if tp.Network == nil {
-		return nil
-	}
-
 	return tp.Network.Close()
 }

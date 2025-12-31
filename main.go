@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
-	"github.com/ukpabik/mfs/internal/server"
+	"github.com/ukpabik/mfs/internal/transport"
 )
 
 func main() {
-	config := server.NewTCPTransportConfig(":3000", server.SimpleHandshake)
-	tp := server.NewTCPTransport(config)
+	config := transport.NewTCPTransportConfig(":3000", transport.SimpleHandshake)
+	tp := transport.NewTCPTransport(config)
 
 	go func() {
 		for rpc := range tp.Consume() {

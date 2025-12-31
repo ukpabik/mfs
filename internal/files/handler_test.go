@@ -10,10 +10,12 @@ import (
 var (
 	writeStr = "hello world"
 	testFile = "temp.txt"
+	root     = "./data"
 )
 
 func TestFileHandler(t *testing.T) {
-	handler := &FileHandler{RootDir: "./data"}
+	config := NewFileHandlerConfig(root)
+	handler := NewFileHandler(config)
 
 	err := handler.Create(testFile)
 	require.NoError(t, err)

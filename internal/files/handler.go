@@ -9,8 +9,22 @@ import (
 )
 
 type FileHandler struct {
+	FileHandlerConfig
+	mut sync.RWMutex
+}
+
+type FileHandlerConfig struct {
 	RootDir string
-	mut     sync.RWMutex
+}
+
+func NewFileHandlerConfig(rootDir string) FileHandlerConfig {
+	return FileHandlerConfig{
+		RootDir: rootDir,
+	}
+}
+
+func NewFileHandler(config FileHandlerConfig) *FileHandler {
+	return &FileHandler{FileHandlerConfig: config}
 }
 
 func (fh *FileHandler) Create(fileName string) error {
@@ -47,7 +61,6 @@ func (fh *FileHandler) Delete(fileName string) error {
 	return os.Remove(fullPath)
 }
 
-// TODO: Maybe making a write at file with an offset would be a good addition??
 func (fh *FileHandler) Write(fileName string, data io.Reader) (int, error) {
 	fh.mut.Lock()
 	defer fh.mut.Unlock()
