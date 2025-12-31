@@ -9,22 +9,12 @@ import (
 )
 
 type FileHandler struct {
-	FileHandlerConfig
-	mut sync.RWMutex
+	rootDir string
+	mut     sync.RWMutex
 }
 
-type FileHandlerConfig struct {
-	RootDir string
-}
-
-func NewFileHandlerConfig(rootDir string) FileHandlerConfig {
-	return FileHandlerConfig{
-		RootDir: rootDir,
-	}
-}
-
-func NewFileHandler(config FileHandlerConfig) *FileHandler {
-	return &FileHandler{FileHandlerConfig: config}
+func NewFileHandler(rootDir string) *FileHandler {
+	return &FileHandler{rootDir: rootDir}
 }
 
 func (fh *FileHandler) Create(fileName string) error {
@@ -121,7 +111,7 @@ func (fh *FileHandler) Clear() error {
 	fh.mut.Lock()
 	defer fh.mut.Unlock()
 
-	return os.RemoveAll(fh.RootDir)
+	return os.RemoveAll(fh.rootDir)
 }
 
 func (fh *FileHandler) resolveFullPath(path string) (string, error) {
@@ -129,5 +119,9 @@ func (fh *FileHandler) resolveFullPath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(fh.RootDir, rel), nil
+	return filepath.Join(fh.rootDir, rel), nil
+}
+
+func (fh *FileHandler) RootDir() string {
+	return fh.rootDir
 }

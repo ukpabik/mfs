@@ -1,23 +1,26 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
+	"github.com/ukpabik/mfs/internal/server"
 	"github.com/ukpabik/mfs/internal/transport"
 )
 
+var (
+	addrOne = ":3000"
+)
+
 func main() {
-	config := transport.NewTCPTransportConfig(":3000", transport.SimpleHandshake)
+	config := transport.NewTCPTransportConfig(addrOne, transport.SimpleHandshake)
 	tp := transport.NewTCPTransport(config)
 
-	go func() {
-		for rpc := range tp.Consume() {
-			log.Printf("rpc from=%v payload=%s", rpc.From, string(rpc.Payload))
-		}
-		log.Printf("rpc channel closed")
-	}()
+	rootDir := fmt.Sprintf("%s_network", addrOne)
+	fsConfig := server.NewFileServerConfig(tp, rootDir)
+	fs := server.NewFileServer(fsConfig)
+	defer fs.Close()
 
-	if err := tp.ListenAndAccept(); err != nil {
-		log.Fatalf("server crashed")
+	if err := fs.Start(); err != nil {
+		panic(err)
 	}
 }

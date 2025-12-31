@@ -14,8 +14,7 @@ var (
 )
 
 func TestFileHandler(t *testing.T) {
-	config := NewFileHandlerConfig(root)
-	handler := NewFileHandler(config)
+	handler := NewFileHandler(root)
 
 	err := handler.Create(testFile)
 	require.NoError(t, err)
