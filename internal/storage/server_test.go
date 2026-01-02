@@ -1,4 +1,4 @@
-package server
+package storage
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestFileServer(t *testing.T) {
 	tpCfg := transport.NewTCPTransportConfig(":3000", transport.SimpleHandshake)
 	tp := transport.NewTCPTransport(tpCfg)
 
-	cfg := NewFileServerConfig(tp, "./data-test")
+	cfg := NewStorageNodeConfig(tp, "./data-test")
 
 	require.NotEmpty(t, cfg.ID)
 	require.Same(t, tp, cfg.Transport)

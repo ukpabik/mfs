@@ -60,6 +60,10 @@ func (fh *FileHandler) Write(fileName string, data io.Reader) (int, error) {
 		return 0, err
 	}
 
+	if err := os.MkdirAll(filepath.Dir(fullPath), os.ModePerm); err != nil {
+		return 0, err
+	}
+
 	file, err := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return 0, err

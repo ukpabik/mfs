@@ -11,6 +11,13 @@ import (
 const HashSegmentSize = 3
 const NumSegments = 3
 
+// TransformPath converts a user-provided path into a hashed directory structure.
+// This distributes files across multiple directories to avoid single large directories.
+//
+// Input: "myfile.txt"
+// Output: "abc/def/ghi/myfile.txt" (where abc/def/ghi come from sha256(input))
+//
+// Returns an error if the path is empty, invalid, or contains path traversal attempts.
 func TransformPath(path string) (string, error) {
 	if strings.TrimSpace(path) == "" {
 		return "", errors.New("empty path")

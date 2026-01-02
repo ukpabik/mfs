@@ -12,6 +12,7 @@ type TCPTransportConfig struct {
 	Decoder       Decoder
 }
 
+// TCPTransport implements the Transport interface over TCP.
 type TCPTransport struct {
 	TCPTransportConfig
 	Network *net.TCPListener
@@ -43,6 +44,8 @@ func NewTCPTransport(config TCPTransportConfig) *TCPTransport {
 	}
 }
 
+// ListenAndAccept starts listening for incoming TCP connections.
+// For each new connection, it runs a handshake and spawns a goroutine to handle the peer.
 func (tp *TCPTransport) ListenAndAccept() error {
 	server, err := net.Listen("tcp", tp.Addr)
 	if err != nil {
@@ -82,6 +85,7 @@ func (tp *TCPTransport) ListenAndAccept() error {
 	}
 }
 
+// handleConnection reads messages from a peer and pushes them to the RPC channel.
 func (tp *TCPTransport) handleConnection(peer *TCPPeer) error {
 	defer peer.Close()
 
