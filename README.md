@@ -3,7 +3,7 @@
 A MAGICAL distributed file system written in Go. 
 
 ## Architecture
-- Runs a **MetadataManager** (client entrypoint) that replicates operations to **3 StorageNodes**
+- Runs a **MetadataManager** (client entrypoint) that replicates operations to **StorageNodes**
 - Uses a simple **quorum rule** (majority) to decide success
 - Stores files locally on each node under its own `./dataN` directory using a hashed path layout
 
