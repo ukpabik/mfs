@@ -7,7 +7,7 @@ A MAGICAL distributed file system written in Go.
 - Uses a simple **quorum rule** (majority) to decide success
 - Stores files locally on each node under its own `./dataN` directory using a hashed path layout
 
-# 💽 Scripts
+## 💽 Scripts
 
 ```sh
 make run      # start server + 3 nodes
